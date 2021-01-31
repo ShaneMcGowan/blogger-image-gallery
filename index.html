@@ -13,6 +13,7 @@
       width: 100%;
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .blogger-gallery-item {
@@ -36,6 +37,9 @@
       justify-content: center;
       align-items: center;
       background-color: rgba(255, 255, 255, 0.75);
+      padding: 25px;
+      box-sizing: border-box;
+      text-align: center;
     }
 
     .blogger-gallery-item:hover .blogger-gallery-text-container {
@@ -49,22 +53,34 @@
       font-weight: bold;
     }
 
-    .blogger-gallery-button-load-more {
+    /* #region - load more button */
+
+    .blogger-gallery-button-load-more-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .blogger-gallery-button-load-more-container .blogger-gallery-button-load-more {
       box-sizing: border-box;
-      background: black;
-      width: calc(100% - 50px);
+      background: white;
+      color: rgb(36, 160, 134);
       padding: 20px;
       margin: 25px;
       text-align: center;
-      border: none;
-      border-radius: 10px;
-      color: white;
+      border: 1px solid black;
+      font-size: 16px;
+      font-weight: bold;
     }
 
-    .blogger-gallery-button-load-more:hover {
+    .blogger-gallery-button-load-more-container .blogger-gallery-button-load-more:hover {
       cursor: pointer;
-      background-color: grey;
+      background-color: #eee;
     }
+
+    /* #endregion - load more button */
+
+    /* #region - gallery modal */
 
     .blogger-gallery-modal {
       display: none;
@@ -119,12 +135,13 @@
       align-items: center;
       background-color: rgba(255, 255, 255, 0.75);
     }
+
+    /* #endregion - gallery modal */
   </style>
 </head>
 
 <body>
   <div id="blogger-gallery" class="blogger-gallery">
-    <button onclick="loadMore()" class="blogger-gallery-button-load-more">Load more</button>
   </div>
   <div id="blogger-gallery-modal" class="blogger-gallery-modal">
     <img id="blogger-gallery-modal-image" src="https://live.staticflickr.com/65535/49908821441_93e9c42074.jpg" />
@@ -134,7 +151,7 @@
     const state = {
       page: 0,
       pages: 0,
-      photoSetId: ''
+      photoSetId: '72157714353277108'
     };
 
     loadMore();
@@ -143,8 +160,10 @@
       state.page++;
 
       const gallery = document.getElementsByClassName('blogger-gallery')[0];
-      const oldButton = document.getElementsByClassName('blogger-gallery-button-load-more')[0];
-      oldButton.parentElement.removeChild(oldButton);
+      const oldButton = document.getElementsByClassName('blogger-gallery-button-load-more-container')[0];
+      if (oldButton !== undefined) {
+        oldButton.parentElement.removeChild(oldButton);
+      }
 
       const url = `https://api.flickr.com/services/rest?extras=visibility&per_page=9&page=${state.page}&photoset_id=${state.photoSetId}&viewerNSID=&method=flickr.photosets.getPhotos&api_key=766c62995dda13f228be6714bdf3480a&format=json&hermes=1&hermesClient=1&reqId=600490ca&nojsoncallback=1`;
 
@@ -160,7 +179,7 @@
               const id = image.id;
               const secret = image.secret;
               const imageURL = `https://live.staticflickr.com/${server}/${id}_${secret}.jpg`;
-              gallery.append(createImageNode(imageURL, 'some test text babyyyy'));
+              gallery.append(createImageNode(imageURL, image.title));
             });
 
             // Add load more button
@@ -176,12 +195,19 @@
     }
 
     function getButtonLoadMore() {
+      // container
+      const container = document.createElement('div');
+      container.classList.add('blogger-gallery-button-load-more-container');
+
+      // button
       const button = document.createElement('button');
       button.textContent = 'Load more';
       button.classList = 'blogger-gallery-button-load-more';
       button.addEventListener('click', loadMore);
 
-      return button;
+      container.appendChild(button);
+
+      return container;
     }
 
     function createImageNode(url, text) {
