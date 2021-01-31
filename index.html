@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Test</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    .blogger-gallery {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .blogger-gallery-item {
+      height: 300px;
+      width: 300px;
+    }
+
+    .blogger-gallery-image {
+      float: left;
+      box-sizing: border-box;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+
+    .blogger-gallery-text-container {
+      display: none;
+      position: absolute;
+      height: 300px;
+      width: 300px;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.75);
+    }
+
+    .blogger-gallery-item:hover .blogger-gallery-text-container {
+      cursor: pointer;
+      display: flex;
+    }
+
+    .blogger-gallery-text-container .blogger-gallery-text {
+      color: rgb(36, 160, 134);
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .blogger-gallery-button-load-more {
+      box-sizing: border-box;
+      background: black;
+      width: calc(100% - 50px);
+      padding: 20px;
+      margin: 25px;
+      text-align: center;
+      border: none;
+      border-radius: 10px;
+      color: white;
+    }
+
+    .blogger-gallery-button-load-more:hover {
+      cursor: pointer;
+      background-color: grey;
+    }
+
+    .blogger-gallery-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      overflow: hidden;
+    }
+
+    .blogger-gallery-modal img {
+      border-radius: 10px;
+    }
+
+    .blogger-gallery-modal-dismiss {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 20px;
+      margin: 25px;
+      height: 10px;
+      width: 10px;
+      border-radius: 5px;
+    }
+
+    .blogger-gallery-modal-dismiss:hover {
+      cursor: pointer;
+      background-color: white;
+    }
+
+    .blogger-gallery-modal-dismiss:after {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      content: "\2573";
+      font-size: 20px;
+      color: black;
+      line-height: 48px;
+      text-align: center;
+    }
+
+    body.blogger-gallery-modal-open {
+      overflow: hidden;
+    }
+
+    body.blogger-gallery-modal-open .blogger-gallery-modal {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.75);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="blogger-gallery" class="blogger-gallery">
+    <button onclick="loadMore()" class="blogger-gallery-button-load-more">Load more</button>
+  </div>
+  <div id="blogger-gallery-modal" class="blogger-gallery-modal">
+    <img id="blogger-gallery-modal-image" src="https://live.staticflickr.com/65535/49908821441_93e9c42074.jpg" />
+    <div id="blogger-gallery-modal-dismiss" class="blogger-gallery-modal-dismiss"></div>
+  </div>
+  <script>
+    const state = {
+      page: 0,
+      pages: 0,
+      photoSetId: ''
+    };
+
+    loadMore();
+
+    function loadMore() {
+      state.page++;
+
+      const gallery = document.getElementsByClassName('blogger-gallery')[0];
+      const oldButton = document.getElementsByClassName('blogger-gallery-button-load-more')[0];
+      oldButton.parentElement.removeChild(oldButton);
+
+      const url = `https://api.flickr.com/services/rest?extras=visibility&per_page=9&page=${state.page}&photoset_id=${state.photoSetId}&viewerNSID=&method=flickr.photosets.getPhotos&api_key=766c62995dda13f228be6714bdf3480a&format=json&hermes=1&hermesClient=1&reqId=600490ca&nojsoncallback=1`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.stat === 'ok') {
+            state.pages = data.photoset.pages;
+
+            data.photoset.photo.forEach(image => {
+              const server = image.server;
+              const id = image.id;
+              const secret = image.secret;
+              const imageURL = `https://live.staticflickr.com/${server}/${id}_${secret}.jpg`;
+              gallery.append(createImageNode(imageURL, 'some test text babyyyy'));
+            });
+
+            // Add load more button
+            console.log(state.page + ' : ' + state.pages);
+            if (state.page < state.pages) {
+              gallery.append(getButtonLoadMore());
+            }
+
+          } else {
+            alert('error loading images');
+          }
+        });
+    }
+
+    function getButtonLoadMore() {
+      const button = document.createElement('button');
+      button.textContent = 'Load more';
+      button.classList = 'blogger-gallery-button-load-more';
+      button.addEventListener('click', loadMore);
+
+      return button;
+    }
+
+    function createImageNode(url, text) {
+      // container
+      const container = document.createElement('div');
+      container.classList.add('blogger-gallery-item');
+
+      // image
+      const image = document.createElement('img');
+      image.src = url;
+      image.classList = 'blogger-gallery-image';
+
+      // text
+      const descriptionContainer = document.createElement('div');
+      descriptionContainer.classList.add('blogger-gallery-text-container');
+
+      const description = document.createElement('div');
+      description.classList.add('blogger-gallery-text');
+      description.textContent = text;
+
+      descriptionContainer.appendChild(description);
+      descriptionContainer.addEventListener('click', () => {
+        document.getElementById('blogger-gallery-modal-image').src = url;
+        document.body.classList.add('blogger-gallery-modal-open');
+        event.stopPropagation();
+      });
+
+      // container
+      container.appendChild(image);
+      container.appendChild(descriptionContainer);
+
+      return container;
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === "Escape") {
+        document.body.classList.remove('blogger-gallery-modal-open');
+      }
+    });
+
+    document.getElementById('blogger-gallery-modal-dismiss').addEventListener('click', (event) => {
+      document.body.classList.remove('blogger-gallery-modal-open');
+    });
+
+    document.getElementById('blogger-gallery-modal-image').addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+  </script>
+</body>
+
+</html>
